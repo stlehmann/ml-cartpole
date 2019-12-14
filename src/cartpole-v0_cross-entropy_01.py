@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import NamedTuple, Tuple, List
+from typing import NamedTuple, Tuple, List, Iterable
 
 import gym
 import numpy as np
@@ -20,6 +20,7 @@ class Net(nn.Module):
     We only use one hidden layer with 128 units.
 
     """
+
     def __init__(self, obs_size: int, hidden_size: int, n_actions: int):
         super().__init__()
         self.net = nn.Sequential(
@@ -34,17 +35,20 @@ class Net(nn.Module):
 
 class Episode(NamedTuple):
     """A full episode with the final reward and a list of steps."""
+
     reward: float
     steps: List[EpisodeStep]
 
 
 class EpisodeStep(NamedTuple):
     """A step with observation and the action."""
+
     observation: Tuple[float]
     action: int
 
 
-def iterate_batches(env: gym.Env, net: Net, batch_size: int) -> List[Episode]:
+# noinspection PyArgumentList
+def iterate_batches(env: gym.Env, net: Net, batch_size: int) -> Iterable[List[Episode]]:
     """Generate batches by stepping through the environment.
 
     Each batch contains a number of full episodes.
@@ -84,7 +88,10 @@ def iterate_batches(env: gym.Env, net: Net, batch_size: int) -> List[Episode]:
         obs = next_obs
 
 
-def filter_batch(batch: List[Episode], percentile: float) -> Tuple[torch.FloatTensor, torch.LongTensor, float, float]:
+# noinspection PyArgumentList
+def filter_batch(
+    batch: List[Episode], percentile: float
+) -> Tuple[torch.FloatTensor, torch.LongTensor, float, float]:
     """Filter the batch for episodes with a reward in the upper percentile."""
     # get all rewards from current batch
     rewards = [episode.reward for episode in batch]
@@ -114,6 +121,7 @@ if __name__ == "__main__":
     # create neural net, learning objective and optimizer for learning
     net = Net(obs_size, HIDDEN_SIZE, n_actions)
     objective = nn.CrossEntropyLoss()
+    # noinspection PyUnresolvedReferences
     optimizer = optim.Adam(params=net.parameters(), lr=0.01)
 
     # generate batches and iterate over them
@@ -130,9 +138,10 @@ if __name__ == "__main__":
         loss_v.backward()
         # optimize net parameters
         optimizer.step()
-        print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
-            iter_no, loss_v.item(), reward_m, reward_b))
+        print(
+            "%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f"
+            % (iter_no, loss_v.item(), reward_m, reward_b)
+        )
         if reward_m > 199:
             print("Solved!")
             break
-
