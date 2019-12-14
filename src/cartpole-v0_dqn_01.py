@@ -24,16 +24,14 @@ class DQN(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(input_size, N_HIDDEN),
-            nn.ReLU(),
-            nn.Linear(128, n_actions)
+            nn.Linear(input_size, N_HIDDEN), nn.ReLU(), nn.Linear(128, n_actions)
         )
 
     def forward(self, x: torch.FloatTensor):
         return self.net(x)
 
 
-def calc_target(net, local_reward, next_state):
+def calc_target(net: DQN, local_reward: float, next_state: np.ndarray):
     if next_state is None:
         return local_reward
 
@@ -50,7 +48,9 @@ def main():
 
     net = DQN(obs_size, n_actions)
     selector = ptan.actions.EpsilonGreedyActionSelector(epsilon=EPSILON_START)
-    agent = ptan.agent.DQNAgent(net, selector, preprocessor=ptan.agent.float32_preprocessor)
+    agent = ptan.agent.DQNAgent(
+        net, selector, preprocessor=ptan.agent.float32_preprocessor
+    )
     exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA)
     replay_buffer = ptan.experience.ExperienceReplayBuffer(exp_source, REPLAY_BUFFER)
 
@@ -92,15 +92,15 @@ def main():
             reward = new_rewards[0]
             total_rewards.append(reward)
             mean_rewards = float(np.mean(total_rewards[-100:]))
-            print("%d: reward: %6.2f, mean_100: %6.2f, epsilon: %.2f, episodes: %d" % (
-                step_idx, reward, mean_rewards, selector.epsilon, done_episodes))
+            print(
+                "%d: reward: %6.2f, mean_100: %6.2f, epsilon: %.2f, episodes: %d"
+                % (step_idx, reward, mean_rewards, selector.epsilon, done_episodes)
+            )
             if mean_rewards > 195:
                 print("Solved in %d steps and %d episodes!" % (step_idx, done_episodes))
+                torch.save(net, "cartpole-v0_dqn_01.pkl")
                 break
 
+
 if __name__ == "__main__":
-    from pyannotate_runtime import collect_types
-    collect_types.init_types_collection()
-    with collect_types.collect():
-        main()
-    collect_types.dump_stats('type_info.json')
+    main()
