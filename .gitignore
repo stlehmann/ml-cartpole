@@ -138,4 +138,3 @@ dmypy.json
 .idea/vcs.xml
 .idea
 src/pong/runs
-*.dat
