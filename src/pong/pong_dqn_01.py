@@ -166,7 +166,8 @@ def calc_loss(
 @click.option("--load", "weights_fn", type=str, help="Load model weights from file")
 @click.option("--fps", type=float, help="Set the maximum fps")
 @click.option("--epsilon", "epsilon_fixed", type=float, help="Fixed exploration rate")
-def main(cuda: bool, env_name: str, reward_stop: float, render: bool, weights_fn: str, fps: float, epsilon_fixed: float):
+@click.option("--no-learn", is_flag=True, default=False, help="Disable learning")
+def main(cuda: bool, env_name: str, reward_stop: float, render: bool, weights_fn: str, fps: float, epsilon_fixed: float, no_learn: bool):
     device = torch.device("cuda" if cuda else "cpu")
     # create environment
     env: gym.Env = wrappers.make_env(env_name)
@@ -241,7 +242,7 @@ def main(cuda: bool, env_name: str, reward_stop: float, render: bool, weights_fn
                 print("Solved in {0} frames!".format(frame_idx))
                 break
 
-        if len(buffer) < REPLAY_START_SIZE:
+        if len(buffer) < REPLAY_START_SIZE or no_learn:
             continue
 
         # sync target net with training net
