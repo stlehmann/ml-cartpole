@@ -11,10 +11,9 @@ import torch.optim as optim
 
 from tensorboardX import SummaryWriter
 
-from .lib import wrappers
-from .lib import dqn_model
+from lib import wrappers, dqn_model
 
-ENV_NAME = "PongNoFrameskip-v4"
+DEFAULT_ENV_NAME = "PongNoFrameskip-v4"
 MEAN_REWARD_BOUND = 19.5
 
 
@@ -84,7 +83,7 @@ class Agent:
         :return: None if not finished, else the reward
 
         """
-        assert device.type in ("cpu", "gpu")
+        assert device.type in ("cpu", "cuda")
         done_reward = None
 
         if np.random.random() < epsilon:
@@ -146,9 +145,9 @@ def calc_loss(
 @click.option(
     "--env",
     "env_name",
-    default=ENV_NAME,
+    default=DEFAULT_ENV_NAME,
     type=str,
-    help="Set a gym environment, default: " + ENV_NAME,
+    help="Set a gym environment, default: " + DEFAULT_ENV_NAME,
 )
 @click.option(
     "--reward",
@@ -213,7 +212,7 @@ def main(cuda: bool, env_name: str, reward_stop: float):
             writer.add_scalar("reward", reward, frame_idx)
 
             if best_mean_reward is None or best_mean_reward < mean_reward:
-                torch.save(net.state_dict(), env_name + "-bast.dat")
+                torch.save(net.state_dict(), env_name + "-best.dat")
                 if best_mean_reward is not None:
                     print("Best mean reward updated %.3f -> %.3f, model saved" % (best_mean_reward, float(mean_reward)))
                 best_mean_reward = float(mean_reward)
