@@ -1,6 +1,10 @@
 # Reinforcement learning for Openai-Gym
 
 This repository contains models for Reinforcement Learning with [Openai Gym](https://gym.openai.com).
+The following code bases on the great book
+["Deep Reinforcement Learning - Hands on"](https://www.amazon.com/Deep-Reinforcement-Learning-Hands-optimisation/dp/1838826998)
+from Maxim Lapan whom I want to give credit here. The code repository to the book with great 
+examples can be found on [Github](https://github.com/PacktPublishing/Deep-Reinforcement-Learning-Hands-On).
 
 All models can be run from the commandline.
 
