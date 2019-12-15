@@ -11,8 +11,8 @@ import torch.optim as optim
 
 from tensorboardX import SummaryWriter
 
-from src.pong.lib import wrappers
-from src.pong.lib import dqn_model
+from .lib import wrappers
+from .lib import dqn_model
 
 ENV_NAME = "PongNoFrameskip-v4"
 MEAN_REWARD_BOUND = 19.5
