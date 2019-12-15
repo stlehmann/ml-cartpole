@@ -12,4 +12,4 @@ The recommended way to get the examples running is to install [conda](https://ww
 
 | Random agent | trained dqn agent |
 |--------|--------|
-| <img src="img/pong_random.gif" style="width:150px">       |<img src="img/pong_smart.gif" style="width:150px">        |
+| ![](img/pong_random.gif) | ![](img/pong_smart.gif)|
