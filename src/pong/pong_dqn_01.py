@@ -1,4 +1,5 @@
 import collections
+import os
 import time
 from typing import NamedTuple, Any, Tuple, Optional, List
 
@@ -65,9 +66,10 @@ class ExperienceBuffer:
 
 
 class Agent:
-    def __init__(self, env: gym.Env, exp_buffer: ExperienceBuffer):
+    def __init__(self, env: gym.Env, exp_buffer: ExperienceBuffer, render: bool = False):
         self.env = env
         self.exp_buffer = exp_buffer
+        self.render = render
         self._reset()
 
     def _reset(self):
@@ -100,6 +102,8 @@ class Agent:
             action = int(act_v.item())
 
         # do environment step and add reward
+        if self.render:
+            self.env.render()
         new_state, reward, is_done, _ = self.env.step(action)
         self.total_reward += reward
 
@@ -158,7 +162,11 @@ def calc_loss(
         MEAN_REWARD_BOUND
     ),
 )
-def main(cuda: bool, env_name: str, reward_stop: float):
+@click.option("--render", is_flag=True, help="Render frames")
+@click.option("--load", "weights_fn", type=str, help="Load model weights from file")
+@click.option("--fps", type=float, help="Set the maximum fps")
+@click.option("--epsilon", "epsilon_fixed", type=float, help="Fixed exploration rate")
+def main(cuda: bool, env_name: str, reward_stop: float, render: bool, weights_fn: str, fps: float, epsilon_fixed: float):
     device = torch.device("cuda" if cuda else "cpu")
     # create environment
     env: gym.Env = wrappers.make_env(env_name)
@@ -167,13 +175,18 @@ def main(cuda: bool, env_name: str, reward_stop: float):
     net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
     tgt_net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
 
+    if weights_fn:
+        assert os.path.isfile(weights_fn), "File {0} does not exist.".format(weights_fn)
+        state_dict = torch.load(weights_fn, map_location=device)
+        net.load_state_dict(state_dict)
+        tgt_net.load_state_dict(state_dict)
+
     # create summary writer for tensorboard
     writer = SummaryWriter(comment="-" + env_name)
 
     # create buffer and agent and init epsilon
     buffer = ExperienceBuffer(REPLAY_SIZE)
-    agent = Agent(env, buffer)
-    epsilon = EPSILON_START
+    agent = Agent(env, buffer, render=render)
 
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
     total_rewards: List[float] = []
@@ -185,11 +198,19 @@ def main(cuda: bool, env_name: str, reward_stop: float):
     while True:
         frame_idx += 1
         # update epsilon
-        epsilon = max(
-            EPSILON_FINAL, EPSILON_START - frame_idx / EPSILON_DECAY_LAST_FRAME
-        )
+        if epsilon_fixed:
+            epsilon = epsilon_fixed
+        else:
+            epsilon = max(
+                EPSILON_FINAL, EPSILON_START - frame_idx / EPSILON_DECAY_LAST_FRAME
+            )
         # play one step
+        t_step_0 = time.time()
         reward = agent.play_step(net, epsilon, device)
+        if fps:
+            while 1 / (time.time() - t_step_0) > fps:
+                time.sleep(0.01)
+
 
         if reward is not None:
             # add reward to total and calculate mean
